@@ -3,6 +3,6 @@ uvicorn[standard]
 psycopg2-binary
 python-dotenv
 requests
-tensorflow==2.13.0
+keras
 numpy
 pydantic

@@ -9,8 +9,14 @@ from pydantic import BaseModel
 import numpy as np
 import uvicorn
 
-# TensorFlow imports
-from tensorflow.keras.models import load_model
+# TensorFlow imports (optional - graceful fallback if not available)
+try:
+    from tensorflow.keras.models import load_model
+    TENSORFLOW_AVAILABLE = True
+except ImportError:
+    print("[WARNING] TensorFlow not available - using fallback mode")
+    load_model = None
+    TENSORFLOW_AVAILABLE = False
 
 # ThingSpeak import
 from thingspeak import get_thingspeak_client
@@ -20,12 +26,17 @@ load_dotenv()
 
 # ===== LOAD ML MODEL =====
 print("Loading ML model...")
-try:
-    ml_model = load_model("saved_models/best_model.h5")
-    print("[OK] ML model loaded successfully")
-except Exception as e:
-    print("[WARNING] Could not load model - " + str(e))
-    ml_model = None
+ml_model = None
+if TENSORFLOW_AVAILABLE:
+    try:
+        ml_model = load_model("saved_models/best_model.h5")
+        print("[OK] ML model loaded successfully")
+    except Exception as e:
+        print("[WARNING] Could not load model - " + str(e))
+        print("[INFO] Running in fallback mode without ML predictions")
+        ml_model = None
+else:
+    print("[INFO] TensorFlow not available - predictions will use cached values")
 
 # ===== DATABASE CONNECTION =====
 def get_connection():
