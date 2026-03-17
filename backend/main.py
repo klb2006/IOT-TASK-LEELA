@@ -9,9 +9,9 @@ from pydantic import BaseModel
 import numpy as np
 import uvicorn
 
-# TensorFlow imports (optional - graceful fallback if not available)
+# Keras imports (using standalone Keras 3) (optional - graceful fallback if not available)
 try:
-    from tensorflow.keras.models import load_model
+    from keras.models import load_model
     TENSORFLOW_AVAILABLE = True
 except ImportError:
     print("[WARNING] TensorFlow not available - using fallback mode")
