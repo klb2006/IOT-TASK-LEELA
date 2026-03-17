@@ -94,7 +94,7 @@ const Analytics = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <ChartSection title="Distance" dataKey="distance" color="#3B82F6" unit="cm" />
         <ChartSection title="Temperature" dataKey="temperature" color="#F97316" unit="°C" />
-        <ChartSection title="Water Level" dataKey="waterLevel" color="#0EA5E9" unit="%" />
+        <ChartSection title="Water Liters" dataKey="waterLevel" color="#0EA5E9" unit="L" />
         <ChartSection title="Water Percentage" dataKey="waterPercentage" color="#06B6D4" unit="%" />
       </div>
     </div>
