@@ -52,7 +52,7 @@ Branch: master
 Root Directory: backend
 Runtime: Python
 Build Command: pip install -r requirements.txt
-Start Command: python3 -m uvicorn main:app --host 0.0.0.0 --port $PORT
+Start Command: uvicorn main:app --host 0.0.0.0 --port $PORT
 ``` 
 
 #### Add Environment Variables:
