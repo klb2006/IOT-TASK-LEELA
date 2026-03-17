@@ -8,7 +8,7 @@ const WaterLevelIndicator = ({ level, loading = false }) => {
   return (
     <div className="premium-card flex flex-col items-center gap-6 h-full">
       <h3 className="text-slate-500 dark:text-slate-400 font-medium text-sm uppercase tracking-wider">
-        Water Level
+        Water Liters
       </h3>
       
       <div className="relative w-32 h-64 bg-slate-100 dark:bg-slate-800 rounded-[2rem] border-4 border-slate-200 dark:border-slate-700 overflow-hidden shadow-inner">
