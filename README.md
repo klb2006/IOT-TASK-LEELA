@@ -1,60 +1,80 @@
-# Water Tank Monitoring System
+# IoT Water Tank Monitoring System
 
-A full-stack water tank level monitoring and prediction system using machine learning, real-time sensor data, and interactive visualizations.
+🌊 A modern real-time water tank monitoring dashboard with live sensor data, beautiful animations, and responsive design. Built with React and FastAPI.
 
-## 🏗️ Architecture
+## ✨ Features
 
-- **Backend**: FastAPI (Python) with TensorFlow ML model
-- **Frontend**: React + Vite with Tailwind CSS
-- **Database**: PostgreSQL
-- **ML Model**: LSTM-based water level prediction
+✅ **Real-time Monitoring** - Live updates every 15 seconds
+✅ **Smooth Animations** - Realistic water tank fill with wave effects  
+✅ **Sensor Integration** - Temperature, distance, and water level sensors
+✅ **Responsive Design** - Works on desktop, tablet, mobile
+✅ **Live Status Indicator** - Connection status display
+✅ **FastAPI Backend** - High-performance async API
+✅ **PostgreSQL Database** - Production-ready data persistence
+✅ **Modern UI** - Clean, professional interface
 
 ## 📁 Project Structure
 
 ```
-├── backend/              # FastAPI server
-│   ├── main.py          # Main API with CORS support
-│   ├── create_model.py  # ML model training
-│   ├── requirements.txt # Python dependencies
-│   └── saved_models/    # Trained ML models
-├── frontend/            # React + Vite application
+.
+├── backend/
+│   ├── main.py                  # FastAPI application
+│   ├── run.py                   # Server launcher
+│   ├── requirements.txt          # Python dependencies
+│   ├── requirements-prod.txt    # Production deps (no TensorFlow)
+│   └── saved_models/            # ML models
+├── frontend/
 │   ├── src/
-│   │   ├── components/  # UI components
-│   │   ├── pages/       # Dashboard & Analytics
-│   │   ├── api/         # API configuration
-│   │   └── hooks/       # Custom React hooks
-│   └── package.json     # Node dependencies
-└── .env.example         # Environment variables template
+│   │   ├── components/          # React components
+│   │   │   ├── WaterLevelIndicator.js  # Water tank animation
+│   │   │   ├── SensorCard.js
+│   │   │   └── ProgressBar.js
+│   │   ├── pages/               # Route pages
+│   │   │   └── Home.js          # Dashboard
+│   │   ├── hooks/
+│   │   │   └── useSensorData.js
+│   │   └── styles/
+│   └── package.json
+├── README.md                     # This file
+├── FRONTEND_DEPLOYMENT.md        # Frontend deployment guide
+├── BACKEND_DEPLOYMENT.md         # Backend deployment guide
+└── .gitignore
 ```
 
-## 🚀 Quick Start (Development)
+## 🎯 Quick Start (Local Development)
 
 ### Prerequisites
-- Python 3.9+
-- Node.js 16+
-- PostgreSQL (or SQLite for testing)
+- Python 3.8+
+- Node.js 14+
+- Git
 
-### Backend Setup
+### Backend (Port 8000)
 
 ```bash
 cd backend
 pip install -r requirements.txt
-python main.py
+python run.py
 ```
 
-API will run on `http://localhost:8000`
+✅ API available at: `http://localhost:8000`
+📖 Swagger docs: `http://localhost:8000/docs`
 
-API Docs: `http://localhost:8000/docs`
-
-### Frontend Setup
+### Frontend (Port 3000)
 
 ```bash
 cd frontend
 npm install
-npm run dev
+npm start
 ```
 
-Frontend will run on `http://localhost:5173`
+✅ Dashboard available at: `http://localhost:3000`
+
+### Test the System
+
+1. Open browser: `http://localhost:3000`
+2. See real sensor data flowing
+3. Watch the water tank animation
+4. Check connection status
 
 ## 📊 API Endpoints
 
@@ -67,29 +87,28 @@ Frontend will run on `http://localhost:5173`
 | GET | `/api/v1/model-info` | ML model information |
 | GET | `/api/v1/predictions/history` | Prediction history |
 
-## 🌐 Deploying to Render
+## 🚀 Deployment
 
-See [RENDER_DEPLOYMENT.md](./RENDER_DEPLOYMENT.md) for detailed instructions.
+### Complete Deployment Guides:
 
-### Quick Deploy Steps:
+📖 **[FRONTEND_DEPLOYMENT.md](./FRONTEND_DEPLOYMENT.md)**
+- Step-by-step React app deployment to Render
+- Environment configuration
+- Build and deploy commands
+- Troubleshooting
 
-1. **Backend**: 
-   - Push code to GitHub
-   - Create new Web Service on Render
-   - Connect GitHub repo
-   - Set environment variables from `.env.example`
-   - Deploy
+📖 **[BACKEND_DEPLOYMENT.md](./BACKEND_DEPLOYMENT.md)**
+- FastAPI server deployment
+- PostgreSQL setup on Render
+- Environment variables configuration  
+- API health checks
 
-2. **Frontend**:
-   - Create new Static Site on Render
-   - Connect GitHub repo
-   - Build command: `cd frontend && npm install && npm run build`
-   - Publish directory: `frontend/dist`
-   - Set `VITE_API_URL` environment variable to your backend URL
+### Quick Summary:
 
-3. **Database**:
-   - Use Render PostgreSQL service
-   - Update `DB_HOST`, `DB_PORT`, `DB_NAME`, etc in backend
+**Backend**: Render Web Service (Python 3.11)
+**Frontend**: Render Static Site (Node.js build)
+**Database**: Render PostgreSQL
+**Total Setup Time**: ~15 minutes
 
 ## 📝 Environment Variables
 
