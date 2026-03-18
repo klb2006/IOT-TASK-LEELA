@@ -1,14 +1,17 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-const WaterLevelIndicator = ({ level, loading = false }) => {
-  // level is 0 to 100
-  const fillHeight = loading ? 50 : (100 - level);
+const WaterLevelIndicator = ({ waterLiters, waterPercentage, loading = false }) => {
+  // waterPercentage is 0 to 100 (for fill height)
+  // waterLiters is the actual liters value
+  const fillHeight = loading ? 50 : (100 - waterPercentage);
+  const displayLiters = loading ? 'Loading...' : waterLiters.toFixed(1);
+  const displayPercentage = loading ? '--' : waterPercentage.toFixed(1);
 
   return (
     <div className="premium-card flex flex-col items-center gap-6 h-full">
       <h3 className="text-slate-500 dark:text-slate-400 font-medium text-sm uppercase tracking-wider">
-        Water Liters
+        Water Volume
       </h3>
       
       <div className="relative w-32 h-64 bg-slate-100 dark:bg-slate-800 rounded-[2rem] border-4 border-slate-200 dark:border-slate-700 overflow-hidden shadow-inner">
@@ -48,8 +51,14 @@ const WaterLevelIndicator = ({ level, loading = false }) => {
         </div>
       </div>
 
-      <div className="text-3xl font-outfit font-bold text-slate-900 dark:text-white">
-        {level}%
+      {/* Display both Liters and Percentage */}
+      <div className="text-center w-full">
+        <div className="text-3xl font-outfit font-bold text-slate-900 dark:text-white">
+          {displayLiters} <span className="text-lg text-slate-500">L</span>
+        </div>
+        <div className="text-lg font-semibold text-blue-600 dark:text-blue-400 mt-1">
+          {displayPercentage}%
+        </div>
       </div>
     </div>
   );

@@ -20,7 +20,13 @@ export const useSensorData = () => {
         const sensorResponse = await fetchAPI(API_ENDPOINTS.SENSOR_LATEST);
         
         if (sensorResponse.status === 'success') {
-          setData(sensorResponse.data);
+          // Only update state if data has changed
+          setData(prevData => {
+            if (!prevData || JSON.stringify(prevData) !== JSON.stringify(sensorResponse.data)) {
+              return sensorResponse.data;
+            }
+            return prevData;
+          });
           setError(null);
         } else {
           setError(sensorResponse.message || 'Failed to fetch sensor data');
@@ -36,8 +42,8 @@ export const useSensorData = () => {
 
     fetchData();
     
-    // Refresh data every 5 seconds
-    const interval = setInterval(fetchData, 5000);
+    // Refresh data every 10 seconds (slower for better readability)
+    const interval = setInterval(fetchData, 10000);
     
     return () => clearInterval(interval);
   }, []);
@@ -64,7 +70,7 @@ export const useServerStatus = () => {
     };
 
     checkStatus();
-    const interval = setInterval(checkStatus, 3000);
+    const interval = setInterval(checkStatus, 10000);
     
     return () => clearInterval(interval);
   }, []);

@@ -118,7 +118,11 @@ const Dashboard = () => {
         </div>
 
         <div className="lg:col-span-1">
-          <WaterLevelIndicator level={displayData.waterLevel} loading={loading} />
+          <WaterLevelIndicator 
+            waterLiters={displayData.waterLevel} 
+            waterPercentage={displayData.waterPercentage}
+            loading={loading} 
+          />
         </div>
       </div>
     </div>
