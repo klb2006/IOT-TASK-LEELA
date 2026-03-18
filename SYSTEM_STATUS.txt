@@ -1,0 +1,106 @@
+SYSTEM STATUS REPORT
+=====================
+Date: March 18, 2026
+
+BACKEND STATUS: ✓ RUNNING
+==========================
+- Port: 8000
+- Status: Listening and responding
+- Server: uvicorn
+- Latest Request: GET /api/v1/status HTTP/1.1 - 200 OK
+
+ML MODEL STATUS: ✓ LOADED SUCCESSFULLY
+========================================
+- Location: C:\Users\Abhishek\Downloads\CAP--IIIT-master\CAP--IIIT-master\backend\saved_models\best_model.h5
+- Type: GRU Neural Network (Sequential Model)
+- Layers: 6
+  ✓ GRU Layer 1 (128 units)
+  ✓ Dropout Layer 1
+  ✓ GRU Layer 2 (64 units)
+  ✓ Dropout Layer 2
+  ✓ Dense Layer 1 (64 units)
+  ✓ Dense Layer 2 (5 output units)
+- Total Parameters: 92,423
+- Trainable Parameters: 92,421
+- Model Size: 361.03 KB
+
+DATA PREPROCESSING: ✓ CONFIGURED
+=================================
+Feature Ranges (for MinMaxScaler):
+- Distance: [5, 50] cm
+- Temperature: [15, 40] °C
+- Water Percent: [0, 100] %
+- Minute: [0, 59]
+- Hour: [0, 23]
+
+DATABASE CONNECTION: ✓ CONFIGURED
+==================================
+- Host: pg-18b46e4c-pillastnrn-f757.f.aivencloud.com
+- Port: 28254
+- Database: defaultdb
+- User: avnadmin
+- SSL Mode: require
+- .env File: C:\Users\Abhishek\Downloads\CAP--IIIT-master\CAP--IIIT-master\backend\.env
+
+FRONTEND STATUS: ✓ RUNNING
+===========================
+- Port: 3000
+- URL: http://127.0.0.1:3000
+- Status: Serving on ESTABLISHED connection
+- UI: Simple, clean design (KIET branded)
+
+API ENDPOINTS AVAILABLE: ✓ ALL WORKING
+=======================================
+- GET  /api/v1/status                    - System status check
+- GET  /api/v1/sensor/latest             - Get latest sensor data
+- GET  /api/v1/sensor/history            - Get sensor history
+- GET  /api/v1/model-info                - Get ML model information
+- GET  /api/v1/predictions-history       - Get prediction history
+- POST /api/v1/predict                   - Make water level prediction
+- (Additional endpoints available)
+
+FRONTEND FEATURES: ✓ DEPLOYED
+==============================
+- Header: "Water Tank Monitoring - KIET"
+- 4 Metric Cards:
+  ✓ Distance (cm)
+  ✓ Temperature (°C)
+  ✓ Water Level (%)
+  ✓ Water Volume (L)
+- Recent Readings Table
+- Model Status Display
+- System Health Status
+- Clean, responsive UI (no emojis)
+
+USER ACCOUNT ACCESS:
+====================
+Database Credentials:
+- Host: pg-18b46e4c-pillastnrn-f757.f.aivencloud.com
+- User: avnadmin
+- Database: defaultdb
+
+OVERALL STATUS: ✓ ALL SYSTEMS OPERATIONAL
+============================================
+✓ Backend is running and responding
+✓ ML Model is fully loaded and ready for predictions
+✓ Database credentials are configured
+✓ Frontend is running and accessible
+✓ All API endpoints are available
+✓ UI is simple, clean, and KIET branded
+
+NEXT STEPS:
+===========
+1. Open http://127.0.0.1:3000 in browser
+2. Dashboard should display:
+   - Current sensor readings
+   - Recent data history
+   - Model status and accuracy
+   - System health indicators
+3. Refresh data button available
+4. All data updates through REST API endpoints
+
+TO ACCESS LATER:
+================
+Backend Swagger API Docs: http://127.0.0.1:8000/docs
+Frontend Dashboard: http://127.0.0.1:3000
+Backend Health: http://127.0.0.1:8000/api/v1/status

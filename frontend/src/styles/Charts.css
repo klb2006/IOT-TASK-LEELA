@@ -1,0 +1,194 @@
+/* Charts Styling */
+.chart-container {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Confidence Gauge */
+.confidence-gauge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+}
+
+.gauge-text {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.gauge-label {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+/* Activity Timeline */
+.activity-timeline {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.activity-timeline h3 {
+  margin: 0 0 20px 0;
+  font-size: 16px;
+  color: var(--dark-color);
+}
+
+.timeline-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.timeline-item {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.timeline-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+.bar-container {
+  background-color: #e5e7eb;
+  border-radius: 8px;
+  height: 30px;
+  overflow: hidden;
+  position: relative;
+}
+
+.bar {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 10px;
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.3), transparent);
+  pointer-events: none;
+}
+
+.bar:hover {
+  filter: brightness(0.9);
+}
+
+.bar-value {
+  color: white;
+  font-weight: 700;
+  font-size: 12px;
+  position: relative;
+  z-index: 1;
+}
+
+.bar-label {
+  font-size: 11px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+/* Prediction Distribution Pie Chart */
+.prediction-distribution {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.prediction-distribution h3 {
+  margin: 0 0 20px 0;
+  font-size: 16px;
+  color: var(--dark-color);
+}
+
+.pie-chart {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.pie-chart svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.legend {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.legend-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.legend-text {
+  color: var(--dark-color);
+}
+
+/* Chart Animations */
+@keyframes chartSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.chart-container {
+  animation: chartSlideIn 0.5s ease;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .timeline-item {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .timeline-label {
+    min-width: 80px;
+  }
+
+  .bar-container {
+    flex: 1;
+  }
+}

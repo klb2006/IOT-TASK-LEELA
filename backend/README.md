@@ -107,7 +107,109 @@ Choose one:
 
 ---
 
-## 🐛 Troubleshooting
+## � Deploy to Render
+
+### **Prerequisites**
+- GitHub account with repository pushed
+- Render.com account (free tier available)
+- PostgreSQL database URL (from Aiven or similar)
+- ThingSpeak API key
+
+### **Step 1: Prepare for Deployment**
+
+Ensure your repository has these files:
+- `main.py` - FastAPI application
+- `requirements.txt` - All dependencies
+- `Procfile` - Process file for Render (example: `web: uvicorn main:app --host 0.0.0.0 --port $PORT`)
+- `render.yaml` - Render deployment config
+- `.env` - Environment variables (NOT pushed to GitHub, set on Render instead)
+
+### **Step 2: Create Render Web Service**
+
+1. Go to [render.com](https://render.com)
+2. Click **New +** → **Web Service**
+3. Connect your GitHub repository
+4. Fill in details:
+   - **Name:** `cap-iiit-backend` (or your preferred name)
+   - **Environment:** `Python 3`
+   - **Build Command:** `pip install -r requirements.txt`
+   - **Start Command:** `uvicorn main:app --host 0.0.0.0 --port $PORT`
+
+### **Step 3: Add Environment Variables**
+
+In Render dashboard under **Environment**:
+```
+DATABASE_URL=postgresql://user:password@host/dbname
+THINGSPEAK_API_KEY=AWP8F08WA7SLO5EQ
+THINGSPEAK_CHANNEL_ID=3290444
+```
+
+Get `DATABASE_URL` from your PostgreSQL provider (Aiven, AWS RDS, etc.)
+
+### **Step 4: Deploy**
+
+1. Click **Create Web Service**
+2. Render will automatically build and deploy
+3. Wait for deployment to complete (2-5 minutes)
+4. Your backend will be live at: `https://your-app-name.onrender.com`
+
+### **Step 5: Verify Deployment**
+
+Check if backend is running:
+```
+GET https://your-app-name.onrender.com/status
+```
+
+Expected response:
+```json
+{
+  "status": "ok",
+  "database": "connected",
+  "model_loaded": true
+}
+```
+
+### **Step 6: Access API Documentation**
+
+Once deployed, view interactive API docs:
+```
+https://your-app-name.onrender.com/docs
+```
+
+### **Common Issues & Solutions**
+
+**Deployment fails with "Build command failed"**
+- Check `requirements.txt` is correct
+- Run locally: `pip install -r requirements.txt`
+- Push fix to GitHub and redeploy
+
+**"Database connection refused"**
+- Verify `DATABASE_URL` in Render environment variables
+- Add your Render IP to database whitelist (if using external DB)
+- Check database is running and accessible
+
+**API returns 502 Bad Gateway**
+- Check Render logs: Dashboard → Service → Logs
+- Ensure `main.py` starts correctly
+- Verify `uvicorn` is specified in `requirements.txt`
+
+**Environment variables not working**
+- Restart the service after adding variables
+- Use `Ctrl+C` and redeploy from Render dashboard
+
+### **Auto-Deploy on GitHub Push**
+
+Render automatically redeploys when you:
+1. Push changes to GitHub (default branch)
+2. Changes are detected automatically
+3. New build starts and deploys
+
+To disable auto-deploy:
+- Dashboard → **Settings** → Toggle **Auto-Deploy** OFF
+
+---
+
+## �🐛 Troubleshooting
 
 **"ModuleNotFoundError: requests"**
 ```powershell

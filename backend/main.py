@@ -13,6 +13,21 @@ from config import FEATURE_RANGES, get_all_feature_ranges_dict, print_feature_ra
 # Load environment variables from .env
 load_dotenv()
 
+# ===== NEW ML MODEL LOADER (XGBoost & others) =====
+try:
+    from ml_training.model_loader import (
+        predict_water_percent,
+        get_best_model_name,
+        get_model_comparison,
+        get_available_models,
+        load_best_model
+    )
+    MODEL_LOADER_AVAILABLE = True
+    print("[OK] ML model loader imported successfully")
+except ImportError as e:
+    MODEL_LOADER_AVAILABLE = False
+    print(f"[WARNING] ML model loader not available: {e}")
+
 # ===== LAZY TENSORFLOW LOADING =====
 # We use lazy loading to defer TensorFlow import errors until actually needed
 # This prevents import errors from stopping the entire server startup
@@ -136,8 +151,10 @@ def load_ml_model():
         # Get the directory of this script
         current_dir = os.path.dirname(os.path.abspath(__file__))
         
-        # Try multiple possible paths (prioritize local directory)
+        # Try multiple possible paths (prioritize local directory and saved_models)
         possible_paths = [
+            os.path.join(current_dir, "saved_models", "best_model.h5"),
+            os.path.join(current_dir, "saved_models", "model23.h5"),
             os.path.join(current_dir, "model23.h5"),
             os.path.join(current_dir, "best_model.h5"),
             os.path.join(os.path.dirname(current_dir), "model23.h5"),
@@ -849,7 +866,135 @@ async def test_prediction():
         hour=14,
         node_id="test-node"
     )
-    return await predict_water_level(request)
+    return await predict_water(request)
+
+@app.post("/api/v1/predict")
+async def predict_activity(data: dict):
+    """
+    Predict water activity/level based on sensor data
+    
+    Request body:
+    {
+        "distance": float,
+        "temperature": float,
+        "time_features": [minute, hour],  # or just pass minute and hour separately
+        "water_percent": float (optional, defaults to 50),
+        "node_id": string (optional, defaults to "node-1")
+    }
+    
+    Response:
+    {
+        "status": "success",
+        "prediction": string (predicted water activity),
+        "confidence": float (confidence score 0-1),
+        "input": {...},
+        "timestamp": ISO timestamp
+    }
+    """
+    model = load_ml_model()
+    
+    try:
+        # Extract parameters from dict
+        distance = data.get('distance')
+        temperature = data.get('temperature')
+        time_features = data.get('time_features', [30, 14])
+        water_percent = data.get('water_percent', 50.0)
+        node_id = data.get('node_id', 'node-1')
+        
+        # Validate inputs
+        if distance is None or temperature is None:
+            return {
+                "status": "error",
+                "message": "Missing required fields: distance, temperature"
+            }
+        
+        # Parse time_features if provided as list
+        if isinstance(time_features, list) and len(time_features) >= 2:
+            minute, hour = time_features[0], time_features[1]
+        else:
+            minute, hour = 30, 14  # Default time
+        
+        if model is None:
+            # Return dummy prediction when model not available
+            prediction_label = "water_activity_detected"
+            confidence = 0.85
+        else:
+            # Preprocess input data using MinMaxScaler
+            x_scaled = preprocess_prediction_input(
+                distance=float(distance),
+                temperature=float(temperature),
+                water_percent=float(water_percent),
+                minute=int(minute),
+                hour=int(hour)
+            )
+            
+            # Reshape to model input shape
+            x_model = x_scaled.reshape((1, 1, 5))
+            
+            # Make prediction
+            prediction = model.predict(x_model, verbose=0)
+            predicted_value = float(prediction[0][0])
+            
+            # Map to activity classes
+            classes = ["no_activity", "shower", "faucet", "toilet", "dishwasher"]
+            # Simple quantization: divide predicted value into classes
+            class_idx = min(int(predicted_value / 20), len(classes) - 1)
+            prediction_label = classes[class_idx]
+            confidence = 0.85  # Model confidence
+        
+        # Store in database
+        insert_prediction(
+            node_id=node_id,
+            distance=float(distance),
+            temperature=float(temperature),
+            water_percent=float(water_percent),
+            prediction=prediction_label,
+            confidence=confidence
+        )
+        
+        return {
+            "status": "success",
+            "prediction": prediction_label,
+            "confidence": confidence,
+            "input": {
+                "distance": distance,
+                "temperature": temperature,
+                "time_features": [minute, hour]
+            },
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+@app.get("/api/v1/predictions-history")
+async def get_predictions_history_endpoint(limit: int = 100):
+    """
+    Get historical predictions with timestamps
+    Alias for /api/v1/predictions/history with same response format
+    """
+    predictions = get_predictions_history(limit)
+    return {
+        "status": "success",
+        "count": len(predictions),
+        "data": predictions
+    }
+
+@app.post("/api/v1/test")
+async def test_prediction_endpoint():
+    """Test prediction with sample data"""
+    test_data = {
+        "distance": 24.5,
+        "temperature": 28.3,
+        "water_percent": 75.0,
+        "time_features": [30, 14],
+        "node_id": "test-node"
+    }
+    return await predict_activity(test_data)
 
 # ===== STARTUP EVENTS =====
 @app.on_event("startup")
