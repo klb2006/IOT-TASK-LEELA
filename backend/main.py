@@ -51,53 +51,68 @@ def rebuild_model_from_weights(model_path):
     """
     try:
         import h5py
+        import numpy as np
         print("[INFO] Attempting to extract weights from model...")
         
         with h5py.File(model_path, 'r') as f:
+            weights_dict = {}
+            
+            # Helper to recursively find weight datasets
+            def get_weight_arrays(group_path):
+                """Get all weight arrays from a group, handling nested structure"""
+                arrays = []
+                if isinstance(f[group_path], h5py.Dataset):
+                    return [np.array(f[group_path])]
+                
+                for key in f[group_path].keys():
+                    item_path = f"{group_path}/{key}"
+                    if isinstance(f[item_path], h5py.Dataset):
+                        arrays.append(np.array(f[item_path]))
+                    elif isinstance(f[item_path], h5py.Group):
+                        arrays.extend(get_weight_arrays(item_path))
+                return arrays
+            
             # Extract GRU weights
             print("[INFO] Extracting GRU layer weights...")
-            gru_weights = []
+            gru_path = 'model_weights/gru'
+            if gru_path in f:
+                gru_weights = get_weight_arrays(gru_path)
+                weights_dict['gru'] = gru_weights
+                print(f"  [OK] GRU: {len(gru_weights)} weight arrays extracted")
+                for i, w in enumerate(gru_weights):
+                    print(f"      Weight {i}: {w.shape}")
             
-            # GRU layer (dense_gru)
-            if 'model_weights/gru/sequential_2/gru/gru_cell' in f:
-                gru_group = f['model_weights/gru/sequential_2/gru/gru_cell']
-                for key in ['kernel', 'recurrent_kernel', 'bias']:
-                    if key in gru_group:
-                        gru_weights.append(gru_group[key][()])
-                        print(f"  [OK] gru {key}: {gru_group[key][()].shape}")
+            # Extract GRU_1 weights
+            print("[INFO] Extracting GRU_1 layer weights...")
+            gru1_path = 'model_weights/gru_1'
+            if gru1_path in f:
+                gru1_weights = get_weight_arrays(gru1_path)
+                weights_dict['gru1'] = gru1_weights
+                print(f"  [OK] GRU_1: {len(gru1_weights)} weight arrays extracted")
+                for i, w in enumerate(gru1_weights):
+                    print(f"      Weight {i}: {w.shape}")
             
-            # GRU_1 layer
-            gru1_weights = []
-            if 'model_weights/gru_1/sequential_2/gru_1/gru_cell' in f:
-                gru1_group = f['model_weights/gru_1/sequential_2/gru_1/gru_cell']
-                for key in ['kernel', 'recurrent_kernel', 'bias']:
-                    if key in gru1_group:
-                        gru1_weights.append(gru1_group[key][()])
-                        print(f"  [OK] gru_1 {key}: {gru1_group[key][()].shape}")
+            # Extract Dense_4 weights
+            print("[INFO] Extracting Dense_4 layer weights...")
+            dense4_path = 'model_weights/dense_4'
+            if dense4_path in f:
+                dense4_weights = get_weight_arrays(dense4_path)
+                weights_dict['dense4'] = dense4_weights
+                print(f"  [OK] Dense_4: {len(dense4_weights)} weight arrays extracted")
+                for i, w in enumerate(dense4_weights):
+                    print(f"      Weight {i}: {w.shape}")
             
-            # Dense layers
-            dense4_weights = []
-            if 'model_weights/dense_4/sequential_2/dense_4' in f:
-                dense4_group = f['model_weights/dense_4/sequential_2/dense_4']
-                for key in ['kernel', 'bias']:
-                    if key in dense4_group:
-                        dense4_weights.append(dense4_group[key][()])
-                        print(f"  [OK] dense_4 {key}: {dense4_group[key][()].shape}")
+            # Extract Dense_5 weights
+            print("[INFO] Extracting Dense_5 layer weights...")
+            dense5_path = 'model_weights/dense_5'
+            if dense5_path in f:
+                dense5_weights = get_weight_arrays(dense5_path)
+                weights_dict['dense5'] = dense5_weights
+                print(f"  [OK] Dense_5: {len(dense5_weights)} weight arrays extracted")
+                for i, w in enumerate(dense5_weights):
+                    print(f"      Weight {i}: {w.shape}")
             
-            dense5_weights = []
-            if 'model_weights/dense_5/sequential_2/dense_5' in f:
-                dense5_group = f['model_weights/dense_5/sequential_2/dense_5']
-                for key in ['kernel', 'bias']:
-                    if key in dense5_group:
-                        dense5_weights.append(dense5_group[key][()])
-                        print(f"  [OK] dense_5 {key}: {dense5_group[key][()].shape}")
-            
-            return {
-                'gru': gru_weights,
-                'gru1': gru1_weights,
-                'dense4': dense4_weights,
-                'dense5': dense5_weights
-            }
+            return weights_dict if weights_dict else None
         
     except Exception as e:
         print(f"[ERROR] Weight extraction failed: {e}")
@@ -115,9 +130,10 @@ def load_model_with_fallback_weights(model_path):
     try:
         weights_dict = rebuild_model_from_weights(model_path)
         if not weights_dict:
+            print("[WARNING] No weights extracted")
             return None
         
-        print("[INFO] Building model with GRU layers and loading weights...")
+        print("[INFO] Building model with GRU layers...")
         
         # Build model: GRU -> GRU -> Dense -> Dense (based on file structure)
         model = Sequential([
@@ -129,23 +145,27 @@ def load_model_with_fallback_weights(model_path):
         ])
         
         model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
-        print("[INFO] Model architecture created")
+        print("[INFO] Model architecture created, loading weights...")
         
-        # Load weights
+        # Load weights into each layer
         try:
-            if weights_dict['gru']:
+            if 'gru' in weights_dict and weights_dict['gru']:
+                print(f"[INFO] Setting GRU weights ({len(weights_dict['gru'])} arrays)...")
                 model.layers[0].set_weights(weights_dict['gru'])
                 print("[OK] GRU layer weights loaded")
             
-            if weights_dict['gru1']:
+            if 'gru1' in weights_dict and weights_dict['gru1']:
+                print(f"[INFO] Setting GRU_1 weights ({len(weights_dict['gru1'])} arrays)...")
                 model.layers[1].set_weights(weights_dict['gru1'])
                 print("[OK] GRU_1 layer weights loaded")
             
-            if weights_dict['dense4']:
+            if 'dense4' in weights_dict and weights_dict['dense4']:
+                print(f"[INFO] Setting Dense_4 weights ({len(weights_dict['dense4'])} arrays)...")
                 model.layers[3].set_weights(weights_dict['dense4'])
                 print("[OK] Dense_4 layer weights loaded")
             
-            if weights_dict['dense5']:
+            if 'dense5' in weights_dict and weights_dict['dense5']:
+                print(f"[INFO] Setting Dense_5 weights ({len(weights_dict['dense5'])} arrays)...")
                 model.layers[4].set_weights(weights_dict['dense5'])
                 print("[OK] Dense_5 layer weights loaded")
             
@@ -153,8 +173,10 @@ def load_model_with_fallback_weights(model_path):
             return model
             
         except Exception as weight_error:
-            print(f"[WARNING] Error loading weights: {weight_error}")
-            print("[INFO] Returning model with random weights")
+            print(f"[WARNING] Error loading some weights: {weight_error}")
+            print("[INFO] Returning model with partially loaded weights")
+            import traceback
+            traceback.print_exc()
             return model
         
     except Exception as e:
