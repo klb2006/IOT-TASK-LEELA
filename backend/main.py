@@ -12,14 +12,17 @@ import uvicorn
 # Keras/TensorFlow imports (optional - graceful fallback if not available)
 try:
     from tensorflow.keras.models import load_model
+    from tensorflow.keras import layers
     TENSORFLOW_AVAILABLE = True
 except ImportError:
     try:
         from keras.models import load_model
+        from keras import layers
         TENSORFLOW_AVAILABLE = True
     except ImportError:
         print("[WARNING] TensorFlow/Keras not available - using fallback mode")
         load_model = None
+        layers = None
         TENSORFLOW_AVAILABLE = False
 
 # ThingSpeak import
@@ -53,8 +56,19 @@ if TENSORFLOW_AVAILABLE:
                 break
         
         if model_path:
-            ml_model = load_model(model_path)
-            print(f"[OK] ML model loaded successfully from {model_path}")
+            try:
+                # Try loading with custom object scope to handle version differences
+                ml_model = load_model(model_path, safe_mode=False)
+                print(f"[OK] ML model loaded successfully from {model_path}")
+            except TypeError:
+                # For older TensorFlow versions that don't have safe_mode parameter
+                try:
+                    ml_model = load_model(model_path)
+                    print(f"[OK] ML model loaded successfully from {model_path}")
+                except Exception as keras_e:
+                    print(f"[WARNING] Keras compatibility issue: {keras_e}")
+                    print("[INFO] Model will use fallback predictions")
+                    ml_model = None
         else:
             print(f"[WARNING] Model not found in any of these paths:")
             for p in possible_paths:
@@ -62,7 +76,7 @@ if TENSORFLOW_AVAILABLE:
             print("[INFO] Running in fallback mode without ML predictions")
             
     except Exception as e:
-        print("[WARNING] Could not load model - " + str(e))
+        print("[WARNING] Error during model loading: " + str(e))
         print("[INFO] Running in fallback mode without ML predictions")
         ml_model = None
 else:

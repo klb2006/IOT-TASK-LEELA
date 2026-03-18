@@ -4,6 +4,6 @@ psycopg2-binary==2.9.9
 python-dotenv==1.0.0
 requests==2.31.0
 
-tensorflow-cpu==2.15.0
+tensorflow-cpu>=2.15.0
 numpy==1.26.3
 pydantic==1.10.12
