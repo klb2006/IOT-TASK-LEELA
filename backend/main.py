@@ -626,7 +626,7 @@ app = FastAPI(title="Water Tank Monitoring System", version="1.0.0")
 # ===== CORS MIDDLEWARE =====
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins (change to specific domains in production)
+    allow_origins=["https://iot-water-tank-frontend.onrender.com/"],  # Allow all origins (change to specific domains in production)
     allow_credentials=True,
     allow_methods=["*"],  # Allow all methods (GET, POST, OPTIONS, etc.)
     allow_headers=["*"],  # Allow all headers
