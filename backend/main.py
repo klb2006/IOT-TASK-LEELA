@@ -9,43 +9,61 @@ from pydantic import BaseModel
 import numpy as np
 import uvicorn
 
-# Keras/TensorFlow imports (optional - graceful fallback if not available)
-try:
-    from tensorflow.keras.models import load_model
-    from tensorflow.keras import layers
-    TENSORFLOW_AVAILABLE = True
-except ImportError:
-    try:
-        from keras.models import load_model
-        from keras import layers
-        TENSORFLOW_AVAILABLE = True
-    except ImportError:
-        print("[WARNING] TensorFlow/Keras not available - using fallback mode")
-        load_model = None
-        layers = None
-        TENSORFLOW_AVAILABLE = False
-
-# ThingSpeak import
-from thingspeak import get_thingspeak_client
-
 # Load environment variables from .env
 load_dotenv()
 
-# ===== LOAD ML MODEL =====
-print("Loading ML model...")
+# ===== LAZY TENSORFLOW LOADING =====
+# We use lazy loading to defer TensorFlow import errors until actually needed
+# This prevents import errors from stopping the entire server startup
 ml_model = None
-if TENSORFLOW_AVAILABLE:
+TENSORFLOW_AVAILABLE = False
+
+def try_load_tensorflow():
+    """Lazy load TensorFlow/Keras - only called when actually needed"""
+    global TENSORFLOW_AVAILABLE
+    try:
+        from tensorflow.keras.models import load_model
+        TENSORFLOW_AVAILABLE = True
+        return load_model
+    except Exception as tf_error:
+        print(f"[WARNING] TensorFlow import failed: {tf_error}")
+        try:
+            from keras.models import load_model
+            TENSORFLOW_AVAILABLE = True
+            return load_model
+        except Exception as keras_error:
+            print(f"[WARNING] Keras import also failed: {keras_error}")
+            print("[INFO] Will run without ML model support")
+            TENSORFLOW_AVAILABLE = False
+            return None
+
+def load_ml_model():
+    """
+    Lazy load the ML model - only attempts to load once
+    """
+    global ml_model, TENSORFLOW_AVAILABLE
+    
+    if ml_model is not None:
+        return ml_model  # Already loaded
+    
+    print("Loading ML model...")
+    
+    load_model_fn = try_load_tensorflow()
+    if not load_model_fn:
+        print("[INFO] Skipping model loading - TensorFlow not available")
+        return None
+    
     try:
         # Get the directory of this script
         current_dir = os.path.dirname(os.path.abspath(__file__))
         
         # Try multiple possible paths (prioritize local directory)
         possible_paths = [
-            os.path.join(current_dir, "best_model.h5"),  # Same directory as main.py
-            os.path.join(current_dir, "saved_models", "best_model.h5"),  # In a saved_models subdirectory
-            os.path.join(os.path.dirname(current_dir), "best_model.h5"),  # Parent directory (root)
-            "best_model.h5",  # Relative path
-            "/opt/render/project/src/backend/best_model.h5"  # Render deployment path
+            os.path.join(current_dir, "best_model.h5"),
+            os.path.join(current_dir, "saved_models", "best_model.h5"),
+            os.path.join(os.path.dirname(current_dir), "best_model.h5"),
+            "best_model.h5",
+            "/opt/render/project/src/backend/best_model.h5"
         ]
         
         model_path = None
@@ -57,30 +75,34 @@ if TENSORFLOW_AVAILABLE:
         
         if model_path:
             try:
-                # Try loading with custom object scope to handle version differences
-                ml_model = load_model(model_path, safe_mode=False)
+                ml_model = load_model_fn(model_path, safe_mode=False)
                 print(f"[OK] ML model loaded successfully from {model_path}")
+                TENSORFLOW_AVAILABLE = True
+                return ml_model
             except TypeError:
-                # For older TensorFlow versions that don't have safe_mode parameter
                 try:
-                    ml_model = load_model(model_path)
+                    ml_model = load_model_fn(model_path)
                     print(f"[OK] ML model loaded successfully from {model_path}")
-                except Exception as keras_e:
-                    print(f"[WARNING] Keras compatibility issue: {keras_e}")
-                    print("[INFO] Model will use fallback predictions")
-                    ml_model = None
+                    TENSORFLOW_AVAILABLE = True
+                    return ml_model
+                except Exception as e:
+                    print(f"[WARNING] Model loading failed: {e}")
+                    print("[INFO] Will use fallback predictions")
+                    return None
         else:
-            print(f"[WARNING] Model not found in any of these paths:")
+            print(f"[WARNING] Model not found. Checked paths:")
             for p in possible_paths:
                 print(f"  - {p}")
-            print("[INFO] Running in fallback mode without ML predictions")
+            print("[INFO] Will use fallback predictions")
+            return None
             
     except Exception as e:
-        print("[WARNING] Error during model loading: " + str(e))
-        print("[INFO] Running in fallback mode without ML predictions")
-        ml_model = None
-else:
-    print("[INFO] TensorFlow/Keras not available - predictions will use cached values")
+        print(f"[WARNING] Error during model loading: {e}")
+        print("[INFO] Will use fallback predictions")
+        return None
+
+# ThingSpeak import
+from thingspeak import get_thingspeak_client
 
 # ===== DATABASE CONNECTION =====
 def get_connection():
@@ -346,7 +368,7 @@ async def status():
     """Get system status"""
     return {
         "status": "running",
-        "model_loaded": ml_model is not None,
+        "model_loaded": load_ml_model() is not None,
         "database": "connected",
         "timestamp": datetime.now().isoformat()
     }
@@ -480,7 +502,8 @@ async def predict_water(request: PredictionRequest):
         "node_id": "node-1"
     }
     """
-    if ml_model is None:
+    model = load_ml_model()
+    if model is None:
         return {"status": "error", "message": "ML model not loaded"}
     
     try:
@@ -491,7 +514,7 @@ async def predict_water(request: PredictionRequest):
         x = x.reshape((1, 1, 5))
         
         # Make prediction
-        prediction = ml_model.predict(x, verbose=0)
+        prediction = model.predict(x, verbose=0)
         predicted_water_percent = float(prediction[0][0])
         
         # Store in database
