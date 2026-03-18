@@ -45,36 +45,82 @@ def try_load_tensorflow():
             TENSORFLOW_AVAILABLE = False
             return None
 
-def convert_keras3_model_to_tf215(model_path):
+def rebuild_model_from_weights(model_path):
     """
-    Convert a Keras 3.x model to TensorFlow 2.15 compatible format
-    This handles the case where model was saved with newer Keras
+    Extract weights from Keras 3.x model and rebuild with TF 2.15 compatible architecture
     """
     try:
-        print(f"[INFO] Attempting to convert model from Keras 3.x to TF 2.15 format...")
-        from tensorflow.keras.models import load_model as tf_load_model
-        from tensorflow import keras
+        import h5py
+        print("[INFO] Attempting to extract weights from model...")
         
-        # Load with compile=False to avoid issues with custom objects
-        model = tf_load_model(model_path, compile=False)
-        print(f"[INFO] Loaded model, now recompiling...")
+        with h5py.File(model_path, 'r') as f:
+            # Print structure for debugging
+            print("[DEBUG] H5 file structure:")
+            def print_structure(name, obj):
+                print(f"  {name}")
+            f.visititems(print_structure)
+            
+            # Try to get model config
+            if 'model_config' in f.attrs:
+                print("[INFO] Found model config in attributes")
+            
+            # Extract weights if they exist
+            if 'model_weights' in f:
+                print("[INFO] Found model_weights group")
+                model_weights_group = f['model_weights']
+                weights = []
+                for layer_name in model_weights_group.keys():
+                    print(f"[INFO] Layer: {layer_name}")
+                    layer_group = model_weights_group[layer_name]
+                    for weight_name in layer_group.keys():
+                        weight_data = layer_group[weight_name][:]
+                        weights.append(weight_data)
+                        print(f"      Weight: {weight_name} shape={weight_data.shape}")
+                
+                if weights:
+                    print(f"[INFO] Extracted {len(weights)} weight arrays")
+                    return weights
         
-        # Recompile with standard optimizer and loss
-        model.compile(
-            optimizer='adam',
-            loss='categorical_crossentropy',
-            metrics=['accuracy']
-        )
+        print("[INFO] Could not extract weights with standard method")
+        return None
         
-        # Save in TensorFlow 2.15 format
-        temp_path = model_path.replace('.h5', '_converted.h5')
-        model.save(temp_path, save_format='h5')
-        print(f"[INFO] Converted model saved to {temp_path}")
-        
-        return model, temp_path
     except Exception as e:
-        print(f"[WARNING] Conversion failed: {e}")
-        return None, None
+        print(f"[ERROR] Weight extraction failed: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
+
+def load_model_with_fallback_weights(model_path):
+    """
+    Try multiple strategies to load the model
+    """
+    from tensorflow.keras.models import Sequential
+    from tensorflow.keras.layers import Dense
+    
+    try:
+        # Strategy 1: Try to load the weights and rebuild
+        weights = rebuild_model_from_weights(model_path)
+        if weights and len(weights) >= 6:  # Should have at least kernel and bias for 3 dense layers = 6 weights
+            print("[INFO] Rebuilding model with extracted weights...")
+            
+            # Build a model with the expected architecture
+            model = Sequential([
+                Dense(64, activation='relu', input_shape=(5,), name='dense_1'),
+                Dense(32, activation='relu', name='dense_2'),
+                Dense(16, activation='relu', name='dense_3'),
+                Dense(4, activation='softmax', name='dense_4')
+            ])
+            
+            model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+            print("[INFO] Setting weights...")
+            model.set_weights(weights[:8])  # Use first 8 weight arrays (4 layers × 2 weights each)
+            print("[OK] Model rebuilt with extracted weights!")
+            return model
+        
+    except Exception as e:
+        print(f"[WARNING] Weight extraction strategy failed: {e}")
+    
+    return None
 
 def load_ml_model():
     """
@@ -132,18 +178,17 @@ def load_ml_model():
                     return ml_model
             except Exception as e:
                 print(f"[WARNING] Direct loading failed: {e}")
-                print(f"[INFO] Attempting to convert model format...")
+                print(f"[INFO] Attempting to extract weights and rebuild model...")
                 
-                # Try converting the model
-                converted_model, converted_path = convert_keras3_model_to_tf215(model_path)
-                if converted_model is not None:
-                    ml_model = converted_model
-                    print(f"[OK] Model converted and loaded successfully from {model_path}")
+                # Try extracting weights and rebuilding
+                ml_model = load_model_with_fallback_weights(model_path)
+                if ml_model is not None:
+                    print(f"[OK] Model successfully rebuilt with extracted weights")
                     TENSORFLOW_AVAILABLE = True
                     print("="*60 + "\n")
                     return ml_model
                 
-                print(f"[ERROR] Model loading and conversion failed with detailed info:")
+                print(f"[ERROR] Model loading and weight extraction both failed:")
                 print(f"  Error type: {type(e).__name__}")
                 print(f"  Error message: {e}")
                 import traceback

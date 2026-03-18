@@ -8,4 +8,5 @@ requests==2.31.0
 # If TensorFlow fails to import, the server will still start in fallback mode
 tensorflow-cpu==2.15.0
 numpy==1.24.3
+h5py>=2.10.0
 pydantic==1.10.12
