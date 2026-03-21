@@ -1,7 +1,7 @@
 // Simple Clean Configuration
 const config = {
   API_BASE_URL: process.env.REACT_APP_API_BASE_URL || 'https://iot-task-leela.onrender.com',
-  API_TIMEOUT: 10000,
+  API_TIMEOUT: 30000,
   
   // College Branding
   COLLEGE_NAME: 'KIET',
