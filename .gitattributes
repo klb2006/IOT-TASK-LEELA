@@ -1,0 +1,5 @@
+# Ensure shell scripts have Unix line endings (LF)
+*.sh text eol=lf
+
+# Ensure Procfile has Unix line endings
+Procfile text eol=lf

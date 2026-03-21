@@ -1,0 +1,13 @@
+fastapi==0.95.1
+uvicorn==0.24.0
+psycopg2-binary==2.9.9
+python-dotenv==1.0.0
+requests==2.31.0
+
+# TensorFlow and dependencies - optional for ML model support
+# If TensorFlow fails to import, the server will still start in fallback mode
+tensorflow-cpu==2.15.0
+numpy==1.24.3
+h5py>=2.10.0
+scikit-learn>=1.0.0
+pydantic==1.10.12

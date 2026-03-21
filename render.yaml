@@ -1,0 +1,38 @@
+services:
+  - type: web
+    name: water-tank-backend
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DB_HOST
+        value: # Set to your PostgreSQL host
+      - key: DB_PORT
+        value: 5432
+      - key: DB_NAME
+        value: # Set to your database name
+      - key: DB_USER
+        value: # Set to your database user
+      - key: DB_PASSWORD
+        value: # Set to your database password (use secret)
+        isSecret: true
+      - key: DB_SSLMODE
+        value: require
+      - key: FRONTEND_URL
+        value: https://water-tank-frontend.onrender.com
+
+  - type: web
+    name: water-tank-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    publishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://water-tank-backend.onrender.com
+
+  - type: pserv
+    name: water-tank-db
+    plan: free
+    ipAllowList: [] # Allow all IPs or specify your backend IP
