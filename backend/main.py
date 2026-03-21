@@ -623,12 +623,12 @@ def get_predictions_history(limit: int = 100):
 # ===== FASTAPI APP =====
 app = FastAPI(title="Water Tank Monitoring System", version="1.0.0")
 
-# app.add_middleware(
+app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:3000",  # Local development
-        "https://iot-water-tank-frontend.onrender.com",  # Production
-        os.getenv("FRONTEND_URL", "http://localhost:3000"),  # From environment
+        "http://localhost:3000",
+        "https://iot-water-tank-frontend.onrender.com",
+        os.getenv("FRONTEND_URL", "http://localhost:3000"),
     ],
     allow_credentials=True,
     allow_methods=["*"],
